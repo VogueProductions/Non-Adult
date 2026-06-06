@@ -960,6 +960,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:22px 0}
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="tdot"></div><span id="toastMsg"></span></div>
 
+
 <div class="form-footer">
   Vogue Productions — Minor Model Consent Form &nbsp;|&nbsp; <span>POCSO Act 2012 Compliant</span> &nbsp;|&nbsp; All submissions are legally timestamped &nbsp;|&nbsp; Child Helpline: <span>1098</span>
 </div>
@@ -1105,12 +1106,22 @@ function snapPhoto(videoId,imgId,captId,snapBtnId,dataVar){
 }
 
 // ---- FILE UPLOAD ----
+var minorDocData = '', guardDocData = '', briefDocData = '';
 function fileUploaded(input,statusId){
   var el=document.getElementById(statusId);
   if(input.files&&input.files[0]){
-    el.textContent=input.files[0].name+' uploaded successfully';
+    var file=input.files[0];
+    el.textContent=file.name+' uploaded successfully';
     el.classList.add('show');
-    showToast('File uploaded: '+input.files[0].name,'tsuccess');
+    showToast('File uploaded: '+file.name,'tsuccess');
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var b64=ev.target.result;
+      if(statusId==='upMinorDocStatus') minorDocData=b64;
+      else if(statusId==='upGuardDocStatus') guardDocData=b64;
+      else if(statusId==='briefStatus') briefDocData=b64;
+    };
+    reader.readAsDataURL(file);
   }
 }
 // Make upload zones work
@@ -1217,9 +1228,12 @@ function collectData(){
     else d[p[0]]=p[1];
   }
   if(Array.isArray(d.assignType)) d.assignType=d.assignType.join(', ');
-  d.minorSelfie = minorSelfieData ? 'Captured' : 'Not captured';
-  d.guardSelfie = guardSelfieData ? 'Captured' : 'Not captured';
-  d.assentSelfie = assentSelfieData ? 'Captured' : 'Not captured';
+  d.minorSelfie = minorSelfieData || 'Not captured';
+  d.guardSelfie = guardSelfieData || 'Not captured';
+  d.assentSelfie = assentSelfieData || 'Not captured';
+  d.minorDoc = minorDocData || 'Not uploaded';
+  d.guardDoc = guardDocData || 'Not uploaded';
+  d.briefDoc = briefDocData || 'Not uploaded';
   d.otpVerified = otpVerified ? 'Yes' : 'No';
   d.geoLocation = geoData ? (geoData.lat+', '+geoData.lon) : 'Not captured';
   d.signatureProvided = sigHasData ? 'Yes' : 'No';
@@ -1238,7 +1252,7 @@ document.getElementById('consentForm').addEventListener('submit',async function(
   btn.innerHTML='<div class="spinner"></div> Registering...';
   var data=collectData();
   try{
-    if(CONSENT_SCRIPT_URL==='https://script.google.com/macros/s/AKfycbwmbNDajF9rxPzfpGVbtdyOuazWM2xjUDRISNTZSLc/dev'){
+    if(CONSENT_SCRIPT_URL==='https://script.google.com/macros/s/AKfycbwmbNDajF9rxPzfpGVbtdyOuazWM2xjUDRISNTZSLc/exec'){
       await new Promise(function(r){setTimeout(r,1600);});
       console.log('Consent data (demo):', data);
     } else {
@@ -1282,6 +1296,7 @@ showStep=function(n){
   origShowStep(n);
   if(n===6&&!geoData) setTimeout(captureGeo,600);
 };
+
 </script>
 </body>
 </html>
